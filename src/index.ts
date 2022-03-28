@@ -3,15 +3,16 @@ import { Command } from "commander";
 const cli = new Command();
 
 const createCommand = cli.command("create")
-    .option("-d, --description <description>", "A description of the object.")
-    .option("-t, --type <type>", "The type or category of the object being created.");
-
 createCommand.command("container")
     .description("Creates a new container.")
+    .option("-d, --description <description>", "A description of the object.")
+    .option("-t, --type <type>", "The type or category of the object being created.")
     .argument("<name>", "The name of the container.")
     .argument("[location]", "The location of the container. Must either be a container name or id.");
 createCommand.command("item")
     .description("Creates a new item.")
+    .option("-d, --description <description>", "A description of the object.")
+    .option("-t, --type <type>", "The type or category of the object being created.")
     .argument("<name>", "The name of the item.")
     .argument("<location>", "The location of the item. Must either be a container name or id.")
     .argument("[quantity]", "Quantity of the item. Must be greater than zero.", 1);
