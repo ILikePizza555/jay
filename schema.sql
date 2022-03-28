@@ -29,6 +29,7 @@ CREATE TABLE item_locations (
             ON UPDATE NO ACTION
 );
 
+/*
 CREATE TABLE audit (
     id INTEGER PRIMARY KEY,
     table TEXT NOT NULL,
@@ -46,4 +47,4 @@ CREATE TABLE audit_creation (
     record_id BLOB NOT NULL,
     who TEXT NOT NULL,
     date DATETIME NOT NULL
-);
+);*/
