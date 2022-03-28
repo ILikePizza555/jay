@@ -1,6 +1,7 @@
 CREATE TABLE items (
     uuid BINARY(128) PRIMARY KEY,
     name TEXT NOT NULL,
+    description TEXT,
     type TEXT,
     quantity INTEGER DEFAULT 1,
     created_date DATETIME NOT NULL,
@@ -11,6 +12,7 @@ CREATE TABLE items (
 CREATE TABLE containers (
     uuid BINARY(128) PRIMARY KEY,
     name TEXT NOT NULL,
+    description TEXT,
     type TEXT,
     created_date DATETIME NOT NULL
 );
