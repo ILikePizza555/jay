@@ -1,5 +1,4 @@
 import Sqlite3 from "better-sqlite3";
-import { Buffer } from "buffer";
 
 export interface ItemDTO {
     uuid: string;
@@ -33,7 +32,7 @@ export class DatabaseConnection {
 
     public readonly insertContainerStatement: Sqlite3.Statement<InsertContainerBindParameters>;
 
-    public static async openConnection(filename: string) {
+    public static openConnection(filename: string) {
         return new DatabaseConnection(new Sqlite3(filename));
     }
 
