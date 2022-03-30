@@ -1,9 +1,8 @@
 import Sqlite3 from "better-sqlite3";
-import { UUID } from "./uuid";
 import { Buffer } from "buffer";
 
 export interface ItemDTO {
-    uuid: UUID;
+    uuid: string;
     name: string;
     description: string|null;
     type: string|null;
@@ -14,7 +13,7 @@ export interface ItemDTO {
 }
 
 export interface ContainerDTO {
-    uuid: UUID;
+    uuid: string;
     name: string;
     description: string|null;
     type: string;
@@ -22,7 +21,7 @@ export interface ContainerDTO {
 }
 
 interface InsertContainerBindParameters {
-    uuid: Buffer;
+    uuid: string;
     name: string;
     description: string|null;
     type: string;
@@ -51,7 +50,7 @@ export class DatabaseConnection {
 
     public insertContainer({uuid, name, description, type, created_date}: ContainerDTO) {
         return this.insertContainerStatement.run({
-            uuid: uuid.asBuffer,
+            uuid,
             name,
             description,
             type,

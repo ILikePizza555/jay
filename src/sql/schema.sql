@@ -1,5 +1,5 @@
 CREATE TABLE items (
-    uuid BINARY(16) PRIMARY KEY,
+    uuid TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
     type TEXT,
@@ -10,7 +10,7 @@ CREATE TABLE items (
 );
 
 CREATE TABLE containers (
-    uuid BINARY(16) PRIMARY KEY,
+    uuid TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
     type TEXT,
@@ -18,8 +18,8 @@ CREATE TABLE containers (
 );
 
 CREATE TABLE item_locations (
-    item_uuid BINARY(16),
-    container_uuid BINARY(16),
+    item_uuid TEXT ,
+    container_uuid TEXT,
     PRIMARY KEY (item_uuid, container_uuid)
     FOREIGN KEY (item_uuid)
         REFERENCES items (item_uuid)

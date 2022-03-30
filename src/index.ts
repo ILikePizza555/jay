@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { DatabaseConnection } from "./db";
-import { UUID } from "./uuid";
+import * as uuid from "uuid";
 
 DatabaseConnection.openConnection("jay.db").then(db => {
     const cli = new Command();
@@ -14,7 +14,7 @@ DatabaseConnection.openConnection("jay.db").then(db => {
         .argument("[location]", "The location of the container. Must either be a container name or id.")
         .action((name, location, options) => {
             db.insertContainer({
-                uuid: new UUID(),
+                uuid: uuid.v1(),
                 name: name,
                 description: options.description ?? null,
                 type: options.type ?? "DEFAULT",
