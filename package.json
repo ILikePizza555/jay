@@ -4,6 +4,7 @@
   "description": "A smart home inventory system with a web frontend",
   "main": "index.js",
   "scripts": {
+    "build": "tsc",
     "dev": "tsc && node ./build/index.js"
   },
   "author": "",
