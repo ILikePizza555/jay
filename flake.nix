@@ -22,7 +22,7 @@
           };
 
           devShell = pkgs.mkShell {
-            packages = commonBuildInputs;
+            packages = [pkgs.sqlite] ++ commonBuildInputs;
           };
         }
     );
