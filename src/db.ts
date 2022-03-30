@@ -1,6 +1,4 @@
-import BSqlite3 from "better-sqlite3";
-import SQL from 'sql-template-strings'
-import { Database, open } from "sqlite";
+import * as Sqlite3 from "better-sqlite3";
 import { UUID } from "./uuid";
 import { Buffer } from "buffer";
 
@@ -24,22 +22,22 @@ export interface ContainerDTO {
 }
 
 export class DatabaseConnection {
-    private _db: Database;
+    private _db: Sqlite3.Database;
+
+    public readonly insertContainerStatement: Sqlite3.Statement;
 
     public static async openConnection(filename: string) {
-        const db = await open({
-            filename: filename,
-            driver: BSqlite3
-        });
-        return new DatabaseConnection(db);
+        return new DatabaseConnection(new Sqlite3(filename));
     }
 
-    constructor(db: Database) {
+    constructor(db: Sqlite3.Database) {
         this._db = db;
+
+        this.insertContainerStatement = this._db.prepare(
+            "INSERT INTO containers (uuid, name, description, type, created_date) VALUE (@uuid, @name, @description, @type, @created_date);");
     }
 
-    public async createContainerRaw(rows: ContainerDTO[]) {
-        const values_sql = rows.map(r => SQL`(${r.uuid.asBuffer}, ${r.name}, ${r.type}, ${r.created_date.getTime()})`).join(", ")
-        return await this._db.run(SQL`INSERT INTO items (uuid, name, type, created_date) VALUES ${values_sql};`);
+    public destroy() {
+        this._db.close();
     }
 }
