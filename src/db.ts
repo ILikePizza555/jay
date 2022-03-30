@@ -43,11 +43,11 @@ export class DatabaseConnection {
         );
         
         this.getContainerByUuidStatement = this._db.prepare(
-            `SELECT * FROM ${CONTAINERS_TABLE_NAME} where uuid = @uuid;`
+            `SELECT * FROM ${CONTAINERS_TABLE_NAME} WHERE uuid = @uuid;`
         );
 
-        this.getContainerByNameStatement =this._db.prepare(
-            `SELECT * FROM ${CONTAINERS_TABLE_NAME} where name = @name;`
+        this.getContainerByNameStatement = this._db.prepare(
+            `SELECT * FROM ${CONTAINERS_TABLE_NAME} WHERE name = @name;`
         );
 
         this.selectAllStatement = this._db.prepare(
