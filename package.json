@@ -17,7 +17,6 @@
     "@types/uuid": "^8.3.4",
     "better-sqlite3": "^7.5.0",
     "commander": "^9.1.0",
-    "sql-template-strings": "^2.2.2",
     "uuid": "^8.3.2"
   }
 }
