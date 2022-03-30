@@ -24,4 +24,9 @@ export class UUID {
     get asString(): string {
         return uuid.stringify(this._buffer);
     }
+
+    // Implemented toPrimitive here so that UUID can be used effortlessly with SQL methods.
+    public [Symbol.toPrimitive](): string {
+        return this.asString;
+    }
 }
