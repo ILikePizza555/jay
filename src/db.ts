@@ -51,9 +51,9 @@ export class DatabaseConnection {
         );
 
         this.selectAllStatement = this._db.prepare(
-            `SELECT 'item' as object_type, * FROM ${ITEMS_TABLE_NAME}
+            `SELECT 'item' as object_type, uuid, name, description, type, created_date FROM ${ITEMS_TABLE_NAME}
             UNION
-            SELECT 'container' as object_type, * FROM ${CONTAINERS_TABLE_NAME};`
+            SELECT 'container' as object_type, uuid, name, description, type, created_date FROM ${CONTAINERS_TABLE_NAME};`
         );
     }
 
