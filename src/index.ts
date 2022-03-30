@@ -1,6 +1,6 @@
 import { Command } from "commander";
+import { createContainerAction } from "./actions";
 import { DatabaseConnection } from "./db";
-import * as uuid from "uuid";
 
 const db = DatabaseConnection.openConnection("jay.db")
 const cli = new Command();
@@ -12,15 +12,7 @@ createCommand.command("container")
     .option("-t, --type <type>", "The type or category of the object being created.")
     .argument("<name>", "The name of the container.")
     .argument("[location]", "The location of the container. Must either be a container name or id.")
-    .action((name, location, options) => {
-        db.insertContainer({
-            uuid: uuid.v1(),
-            name: name,
-            description: options.description ?? null,
-            type: options.type ?? "DEFAULT",
-            created_date: new Date()
-        });
-    });
+    .action((name, location, options) => createContainerAction(db, name, location, options.description, options.type));
 
 createCommand.command("item")
     .description("Creates a new item.")
