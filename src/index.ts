@@ -1,6 +1,8 @@
 import { Command } from "commander";
-import { createContainerAction } from "./actions";
+import { createContainerAction, queryContainerAction } from "./actions";
 import { DatabaseConnection } from "./db";
+import { DisplayError } from "./error";
+import { handleDisplayError } from "./useful";
 
 const db = DatabaseConnection.openConnection("jay.db")
 const cli = new Command();
@@ -32,7 +34,10 @@ listCommand.command("all")
     });
 listCommand.command("container")
     .description("Lists all items in the specified container.")
-    .argument("<name-or-id>", "The name or id of a container.");
+    .argument("<name-or-id>", "The name or id of a container.")
+    .action(handleDisplayError((name_or_id: string) => {
+        queryContainerAction(db, name_or_id)
+    }));
 
 cli.command("delete")
     .description("Deletes an object.")

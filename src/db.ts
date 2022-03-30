@@ -26,6 +26,9 @@ export class DatabaseConnection {
     private _db: Sqlite3.Database;
 
     public readonly insertContainerStatement: Sqlite3.Statement<InsertContainerQueryParameters>;
+    public readonly getContainerByUuidStatement: Sqlite3.Statement<string>;
+    public readonly getContainerByNameStatement: Sqlite3.Statement<string>;
+
     public readonly selectAllStatement: Sqlite3.Statement;
 
     public static openConnection(filename: string) {
@@ -36,12 +39,21 @@ export class DatabaseConnection {
         this._db = db;
 
         this.insertContainerStatement = this._db.prepare(
-            "INSERT INTO containers (uuid, name, description, type, created_date) VALUES (@uuid, @name, @description, @type, @created_date);");
+            `INSERT INTO ${CONTAINERS_TABLE_NAME} (uuid, name, description, type, created_date) VALUES (@uuid, @name, @description, @type, @created_date);`
+        );
+        
+        this.getContainerByUuidStatement = this._db.prepare(
+            `SELECT * FROM ${CONTAINERS_TABLE_NAME} where uuid = @uuid;`
+        );
+
+        this.getContainerByNameStatement =this._db.prepare(
+            `SELECT * FROM ${CONTAINERS_TABLE_NAME} where name = @name;`
+        );
 
         this.selectAllStatement = this._db.prepare(
-            `SELECT 'item' as object_type, uuid, name, description, type FROM ${ITEMS_TABLE_NAME}
+            `SELECT 'item' as object_type, * FROM ${ITEMS_TABLE_NAME}
             UNION
-            SELECT 'container' as object_type, uuid, name, description, type FROM ${CONTAINERS_TABLE_NAME};`
+            SELECT 'container' as object_type, * FROM ${CONTAINERS_TABLE_NAME};`
         );
     }
 

@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "better-sqlite3": "^7.5.0",
-    "commander": "^9.1.0"
+    "commander": "^9.1.0",
+    "table": "^6.8.0"
   }
 }
