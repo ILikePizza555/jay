@@ -39,9 +39,9 @@ export class DatabaseConnection {
             "INSERT INTO containers (uuid, name, description, type, created_date) VALUES (@uuid, @name, @description, @type, @created_date);");
 
         this.selectAllStatement = this._db.prepare(
-            `SELECT (uuid, name, description, type) FROM ${ITEMS_TABLE_NAME}
+            `SELECT 'item' as object_type, uuid, name, description, type FROM ${ITEMS_TABLE_NAME}
             UNION
-            SELECT (uuid, name, description, type) FROM ${CONTAINERS_TABLE_NAME};`
+            SELECT 'container' as object_type, uuid, name, description, type FROM ${CONTAINERS_TABLE_NAME};`
         );
     }
 
