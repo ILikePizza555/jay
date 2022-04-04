@@ -110,6 +110,10 @@ impl DatabaseConnection {
                UNION
                SELECT 'container' as object_type, uuid, name, description, type, created_date FROM containers;"#)?;
 
+        // Yeah, I'm returning a vector instead of an interator or something
+        // I know it's not the "idiomatic" way of doing things in Rust,
+        // but fucking rusqlite is doing some insane bullshit with lifetimes and the way it's query's functions work
+        // and I am *tired* of dealing with the god-damn borrow checker.
         let r: Result<Vec<ItemOrContainerRow>> = statement.query_and_then([], |row| {
             let object_type: String = row.get(0)?;
 
