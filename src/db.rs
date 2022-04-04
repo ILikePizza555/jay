@@ -6,6 +6,8 @@ use uuid::{Uuid, Error as UuidError};
 
 #[derive(Debug)]
 pub enum DatabaseError {
+    ContainerUuidNotFound(Uuid),
+
     UuidError(UuidError),
     SqliteError(RusqliteError)
 }
@@ -13,6 +15,9 @@ pub enum DatabaseError {
 impl Display for DatabaseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &*self {
+            DatabaseError::ContainerUuidNotFound(uuid) => 
+                write!(f, "Container with uuid {} not found.", uuid.to_hyphenated().to_string()),
+
             DatabaseError::UuidError(e) => fmt::Display::fmt(&e, f),
             DatabaseError::SqliteError(e) => fmt::Display::fmt(&e, f)
         }
@@ -101,6 +106,10 @@ impl ContainerRow {
             r_type,
             created_date: Utc::now()
         }
+    }
+
+    pub fn from_row(row: &Row) -> Result<Self> {
+        Self::from_row_offset(row, 0)
     }
 
     pub fn from_row_offset(row: &Row, index_offset: usize) -> Result<Self> {
@@ -206,5 +215,19 @@ impl DatabaseConnection {
             ?.collect();
         
         r
+    }
+
+    pub fn select_container_by_uuid(&self, uuid: &Uuid) -> Result<ContainerRow> {
+        let mut statement = self.0.prepare(
+            "SELECT uuid, name, description, type, created_date FROM contianers WHERE uuid = ?1"
+        )?;
+
+        let uuid_str = uuid.to_hyphenated().to_string();
+        let mut rows = statement.query([uuid_str])?;
+        
+        match rows.next()? {
+            Some(e) => Ok(ContainerRow::from_row(e)?),
+            None => Err(DatabaseError::ContainerUuidNotFound(*uuid))
+        }
     }
 }
