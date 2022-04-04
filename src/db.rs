@@ -214,7 +214,7 @@ impl DatabaseConnection {
     /// Selects container(s) from the database with the specified name
     pub fn select_container_by_name(&self, name: &str) -> Result<Vec<ContainerRow>> {
         let mut statement = self.0.prepare(
-            "SELECT uuid, name, description, type, created_date FROM contianers WHERE name = ?1"
+            "SELECT uuid, name, description, type, created_date FROM containers WHERE name = ?1"
         )?;
 
         let r: Result<Vec<ContainerRow>> = statement
@@ -227,7 +227,7 @@ impl DatabaseConnection {
     /// Selects the container from the database with the given uuid.
     pub fn select_container_by_uuid(&self, uuid: &Uuid) -> Result<ContainerRow> {
         let mut statement = self.0.prepare(
-            "SELECT uuid, name, description, type, created_date FROM contianers WHERE uuid = ?1"
+            "SELECT uuid, name, description, type, created_date FROM containers WHERE uuid = ?1"
         )?;
 
         let uuid_str = uuid.to_hyphenated().to_string();
