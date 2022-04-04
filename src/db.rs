@@ -1,7 +1,7 @@
 use core::fmt;
 use std::{path::Path, error::Error, fmt::{Display, Debug}};
 use chrono::{DateTime, Utc, NaiveDateTime};
-use rusqlite::{Connection, Row, Error as RusqliteError, AndThenRows};
+use rusqlite::{Connection, Row, Error as RusqliteError};
 use uuid::{Uuid, Error as UuidError};
 
 #[derive(Debug)]
@@ -12,7 +12,7 @@ pub enum DatabaseError {
 
 impl Display for DatabaseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
+        match &*self {
             DatabaseError::UuidError(e) => fmt::Display::fmt(&e, f),
             DatabaseError::SqliteError(e) => fmt::Display::fmt(&e, f)
         }
@@ -85,7 +85,7 @@ impl ContainerRow {
             description: row.get(index_offset + 2)?,
             r_type: row.get(index_offset + 3)?,
             created_date: DateTime::from_utc(
-                NaiveDateTime::from_timestamp(row.get(index_offset + 5)?, 0),Utc),
+                NaiveDateTime::from_timestamp(row.get(index_offset + 4)?, 0),Utc),
         })
     }
 }
