@@ -6,7 +6,8 @@ use uuid::{Uuid, Error as UuidError};
 
 #[derive(Debug)]
 pub enum DatabaseError {
-    ContainerUuidNotFound(Uuid),
+    ContainerUuidNotFoundError(Uuid),
+    ContainerAmbigiousNameError(String, Vec<ContainerRow>),
 
     UuidError(UuidError),
     SqliteError(RusqliteError)
@@ -15,8 +16,11 @@ pub enum DatabaseError {
 impl Display for DatabaseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &*self {
-            DatabaseError::ContainerUuidNotFound(uuid) => 
+            DatabaseError::ContainerUuidNotFoundError(uuid) => 
                 write!(f, "Container with uuid {} not found.", uuid.to_hyphenated().to_string()),
+
+            DatabaseError::ContainerAmbigiousNameError(name, matches) =>
+                write!(f, "Identifier {} is ambigious, found {} containers with that name.", name, matches.len()),
 
             DatabaseError::UuidError(e) => fmt::Display::fmt(&e, f),
             DatabaseError::SqliteError(e) => fmt::Display::fmt(&e, f)
@@ -158,6 +162,7 @@ impl DatabaseConnection {
         Ok(())
     }
 
+    /// Directly inserts a new item into the items table.
     pub fn insert_item(&self, item: ItemRow) -> Result<()> {
         let mut statement = self.0.prepare(
         "INSERT INTO 'items' (uuid, name, description, type, quantity, created_date, modified_date, status)
@@ -180,6 +185,7 @@ impl DatabaseConnection {
         Ok(())
     }
 
+    /// Selects all items and containers in the catalogue and returns them.
     pub fn select_all_items_and_containers(&self) -> Result<Vec<ItemOrContainerRow>> {
         let mut statement = self.0.prepare(
         r#"SELECT 'item' as object_type, uuid, name, description, type, created_date FROM items
@@ -205,6 +211,7 @@ impl DatabaseConnection {
         r
     }
 
+    /// Selects container(s) from the database with the specified name
     pub fn select_container_by_name(&self, name: &str) -> Result<Vec<ContainerRow>> {
         let mut statement = self.0.prepare(
             "SELECT uuid, name, description, type, created_date FROM contianers WHERE name = ?1"
@@ -217,6 +224,7 @@ impl DatabaseConnection {
         r
     }
 
+    /// Selects the container from the database with the given uuid.
     pub fn select_container_by_uuid(&self, uuid: &Uuid) -> Result<ContainerRow> {
         let mut statement = self.0.prepare(
             "SELECT uuid, name, description, type, created_date FROM contianers WHERE uuid = ?1"
@@ -227,7 +235,22 @@ impl DatabaseConnection {
         
         match rows.next()? {
             Some(e) => Ok(ContainerRow::from_row(e)?),
-            None => Err(DatabaseError::ContainerUuidNotFound(*uuid))
+            None => Err(DatabaseError::ContainerUuidNotFoundError(*uuid))
         }
+    }
+
+    /// Determines if the provided string is a uuid or name, then returns the containers which matches the provided identifier.
+    pub fn find_container_by_name_or_uuid(&self, name_or_uuid: &str) -> Result<ContainerRow> {
+        Uuid::parse_str(name_or_uuid)
+            .map_err(|e| DatabaseError::UuidError(e))
+            .and_then(|uuid| self.select_container_by_uuid(&uuid))
+            .or_else(|_| {
+                let mut containers = self.select_container_by_name(name_or_uuid)?;
+                if containers.len() > 1 {
+                    Err(DatabaseError::ContainerAmbigiousNameError(name_or_uuid.to_string(), containers))
+                } else {
+                    Ok(containers.remove(0))
+                }
+            })
     }
 }
