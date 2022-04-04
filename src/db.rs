@@ -1,7 +1,7 @@
 use core::fmt;
 use std::{path::Path, error::Error, fmt::{Display, Debug}};
 use chrono::{DateTime, Utc, NaiveDateTime};
-use rusqlite::{Connection, Row, Error as RusqliteError};
+use rusqlite::{Connection, Row, Error as RusqliteError, named_params};
 use uuid::{Uuid, Error as UuidError};
 
 #[derive(Debug)]
@@ -78,6 +78,16 @@ pub struct ContainerRow {
 }
 
 impl ContainerRow {
+    pub fn new(name: String, description: Option<String>, r_type: Option<String>) -> Self {
+        ContainerRow {
+            uuid: Uuid::new_v4(),
+            name,
+            description,
+            r_type,
+            created_date: Utc::now()
+        }
+    }
+
     pub fn from_row_offset(row: &Row, index_offset: usize) -> Result<Self> {
         Ok(ContainerRow {
             uuid: Uuid::parse_str(row.get::<usize, String>(index_offset)?.as_str())?,
@@ -102,6 +112,26 @@ pub struct DatabaseConnection (Connection);
 impl DatabaseConnection {
     pub fn open<P : AsRef<Path>>(p: P) -> core::result::Result<DatabaseConnection, rusqlite::Error> {
         Connection::open(p).map(|c| DatabaseConnection(c))
+    }
+
+    /// Directly inserts a new row into the container table.
+    pub fn insert_container(&self, container: ContainerRow) -> Result<()> {
+        let mut statement = self.0.prepare(
+        "INSERT INTO 'container' (uuid, name, description, type, created_date)
+            VALUES (:uuid, :name, :description, :type, :created_date)"
+        )?;
+
+        let result= statement.execute(named_params! {
+            ":uuid":            container.uuid.to_hyphenated().to_string(),
+            ":name":            container.name,
+            ":description":     container.description,
+            ":type":            container.r_type,
+            ":created_date":    container.created_date.timestamp()
+        })?;
+
+        assert!(result == 1);
+
+        Ok(())
     }
 
     pub fn select_all_items_and_containers(&self) -> Result<Vec<ItemOrContainerRow>> {
