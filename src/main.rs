@@ -1,7 +1,7 @@
-use std::error::Error;
-
 use clap::{Parser, Subcommand};
-use rusqlite::Connection;
+use db::DatabaseConnection;
+
+mod db;
 
 #[derive(Parser)]
 struct Cli {
@@ -60,19 +60,17 @@ enum ListCommands {
 fn main() {
     let cli = Cli::parse();
 
-    let db_connection = Connection::open("./jay.db").expect("Could not connect to database!");
+    let db_connection = DatabaseConnection::open("./jay.db").expect("Could not connect to database!");
 
     match cli.command {
         ActionCommands::List(ListCommands::All) => {
-            let mut statement = db_connection.prepare(
-            r#"SELECT 'item' as object_type, uuid, name, description, type, created_date FROM items
-                    UNION
-                    SELECT 'container' as object_type, uuid, name, description, type, created_date FROM containers;"#)
-                .expect("Error creating prepared statement.");
-                
-            let mut rows = statement.query([]).expect("Error executing query.");
-            while let Some(row) = rows.next().unwrap() {
-                println!("{} {} {}", row.get_unwrap::<usize, String>(0), row.get_unwrap::<usize, String>(1), row.get_unwrap::<usize, String>(2))
+            let items = db_connection.select_all_items_and_containers().expect("Error executing query.");
+
+            for item in items {
+                match item {
+                    db::ItemOrContainerRow::Item(i) => println!("Item: {:?}", i),
+                    db::ItemOrContainerRow::Container(c) => println!("Container: {:?}", c),
+                }
             }
         },
         _ => (),
