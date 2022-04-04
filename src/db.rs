@@ -195,4 +195,16 @@ impl DatabaseConnection {
 
         r
     }
+
+    pub fn select_container_by_name(&self, name: &str) -> Result<Vec<ContainerRow>> {
+        let mut statement = self.0.prepare(
+            "SELECT uuid, name, description, type, created_date FROM contianers WHERE name = ?1"
+        )?;
+
+        let r: Result<Vec<ContainerRow>> = statement
+            .query_and_then([name], |r| ContainerRow::from_row_offset(r, 0))
+            ?.collect();
+        
+        r
+    }
 }
