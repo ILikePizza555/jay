@@ -51,6 +51,21 @@ pub struct ItemRow {
 }
 
 impl ItemRow {
+    pub fn new(name: String, description: Option<String>, r_type: Option<String>, quantity: usize, status: String) -> Self {
+        let now = Utc::now();
+        
+        ItemRow { 
+            uuid: Uuid::new_v4(),
+            name,
+            description,
+            r_type,
+            quantity,
+            created_date: now,
+            modified_date: now, 
+            status
+        }
+    }
+
     pub fn from_row_offset(row: &Row, index_offset: usize) -> Result<Self> {
         Ok(ItemRow {
             uuid: Uuid::parse_str(row.get::<usize, String>(index_offset)?.as_str())?,
@@ -117,16 +132,38 @@ impl DatabaseConnection {
     /// Directly inserts a new row into the container table.
     pub fn insert_container(&self, container: ContainerRow) -> Result<()> {
         let mut statement = self.0.prepare(
-        "INSERT INTO 'container' (uuid, name, description, type, created_date)
+        "INSERT INTO 'containers' (uuid, name, description, type, created_date)
             VALUES (:uuid, :name, :description, :type, :created_date)"
         )?;
 
         let result= statement.execute(named_params! {
-            ":uuid":            container.uuid.to_hyphenated().to_string(),
-            ":name":            container.name,
-            ":description":     container.description,
-            ":type":            container.r_type,
-            ":created_date":    container.created_date.timestamp()
+            ":uuid":           container.uuid.to_hyphenated().to_string(),
+            ":name":           container.name,
+            ":description":    container.description,
+            ":type":           container.r_type,
+            ":created_date":   container.created_date.timestamp()
+        })?;
+
+        assert!(result == 1);
+
+        Ok(())
+    }
+
+    pub fn insert_item(&self, item: ItemRow) -> Result<()> {
+        let mut statement = self.0.prepare(
+        "INSERT INTO 'items' (uuid, name, description, type, quantity, created_date, modified_date, status)
+            VALUES (:uuid, :name, :description, :type, :quantity, :created_date, :modified_date, :status)"
+        )?;
+
+        let result = statement.execute(named_params! {
+            ":uuid":           item.uuid.to_hyphenated().to_string(),
+            ":name":           item.name,
+            ":description":    item.description,
+            ":type":           item.r_type,
+            ":quantity":       item.quantity,
+            ":created_date":   item.modified_date.timestamp(),
+            ":modified_date":  item.modified_date.timestamp(),
+            ":status":         item.status
         })?;
 
         assert!(result == 1);
