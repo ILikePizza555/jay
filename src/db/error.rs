@@ -39,4 +39,4 @@ impl From<RusqliteError> for DatabaseError {
     }
 }
 
-type Result<T> = core::result::Result<T, DatabaseError>;
+pub type Result<T> = core::result::Result<T, DatabaseError>;

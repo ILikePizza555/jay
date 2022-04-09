@@ -34,7 +34,7 @@ impl ItemRow {
         }
     }
 
-    pub fn from_row_offset(row: &Row, index_offset: usize) -> Result<Self> {
+    pub fn from_row_offset(row: &Row, index_offset: usize) -> error::Result<Self> {
         Ok(ItemRow {
             uuid: Uuid::parse_str(row.get::<usize, String>(index_offset)?.as_str())?,
             name: row.get(index_offset + 1)?,
@@ -71,11 +71,11 @@ impl ContainerRow {
         }
     }
 
-    pub fn from_row(row: &Row) -> Result<Self> {
+    pub fn from_row(row: &Row) -> error::Result<Self> {
         Self::from_row_offset(row, 0)
     }
 
-    pub fn from_row_offset(row: &Row, index_offset: usize) -> Result<Self> {
+    pub fn from_row_offset(row: &Row, index_offset: usize) -> error::Result<Self> {
         Ok(ContainerRow {
             uuid: Uuid::parse_str(row.get::<usize, String>(index_offset)?.as_str())?,
             name: row.get(index_offset + 1)?,
@@ -102,7 +102,7 @@ impl DatabaseConnection {
     }
 
     /// Directly inserts a new row into the container table.
-    pub fn insert_container(&self, container: ContainerRow) -> Result<()> {
+    pub fn insert_container(&self, container: ContainerRow) -> error::Result<()> {
         let mut statement = self.0.prepare(
         "INSERT INTO 'containers' (uuid, name, description, type, created_date)
             VALUES (:uuid, :name, :description, :type, :created_date)"
@@ -122,7 +122,7 @@ impl DatabaseConnection {
     }
 
     /// Directly inserts a new item into the items table.
-    pub fn insert_item(&self, item: ItemRow) -> Result<()> {
+    pub fn insert_item(&self, item: ItemRow) -> error::Result<()> {
         let mut statement = self.0.prepare(
         "INSERT INTO 'items' (uuid, name, description, type, quantity, created_date, modified_date, status)
             VALUES (:uuid, :name, :description, :type, :quantity, :created_date, :modified_date, :status)"
@@ -145,7 +145,7 @@ impl DatabaseConnection {
     }
 
     /// Selects all items and containers in the catalogue and returns them.
-    pub fn select_all_items_and_containers(&self) -> Result<Vec<ItemOrContainerRow>> {
+    pub fn select_all_items_and_containers(&self) -> error::Result<Vec<ItemOrContainerRow>> {
         let mut statement = self.0.prepare(
         r#"SELECT 'item' as object_type, uuid, name, description, type, created_date FROM items
                UNION
@@ -155,7 +155,7 @@ impl DatabaseConnection {
         // I know it's not the "idiomatic" way of doing things in Rust,
         // but fucking rusqlite is doing some insane bullshit with lifetimes and the way it's query's functions work
         // and I am *tired* of dealing with the god-damn borrow checker.
-        let r: Result<Vec<ItemOrContainerRow>> = statement.query_and_then([], |row| {
+        let r: error::Result<Vec<ItemOrContainerRow>> = statement.query_and_then([], |row| {
             let object_type: String = row.get(0)?;
 
             if object_type.eq_ignore_ascii_case("item") {
@@ -171,12 +171,12 @@ impl DatabaseConnection {
     }
 
     /// Selects container(s) from the database with the specified name
-    pub fn select_container_by_name(&self, name: &str) -> Result<Vec<ContainerRow>> {
+    pub fn select_container_by_name(&self, name: &str) -> error::Result<Vec<ContainerRow>> {
         let mut statement = self.0.prepare(
             "SELECT uuid, name, description, type, created_date FROM containers WHERE name = ?1"
         )?;
 
-        let r: Result<Vec<ContainerRow>> = statement
+        let r: error::Result<Vec<ContainerRow>> = statement
             .query_and_then([name], |r| ContainerRow::from_row_offset(r, 0))
             ?.collect();
         
@@ -184,7 +184,7 @@ impl DatabaseConnection {
     }
 
     /// Selects the container from the database with the given uuid.
-    pub fn select_container_by_uuid(&self, uuid: &Uuid) -> Result<ContainerRow> {
+    pub fn select_container_by_uuid(&self, uuid: &Uuid) -> error::Result<ContainerRow> {
         let mut statement = self.0.prepare(
             "SELECT uuid, name, description, type, created_date FROM containers WHERE uuid = ?1"
         )?;
@@ -194,19 +194,19 @@ impl DatabaseConnection {
         
         match rows.next()? {
             Some(e) => Ok(ContainerRow::from_row(e)?),
-            None => Err(DatabaseError::ContainerUuidNotFoundError(*uuid))
+            None => Err(error::DatabaseError::ContainerUuidNotFoundError(*uuid))
         }
     }
 
     /// Determines if the provided string is a uuid or name, then returns the containers which matches the provided identifier.
-    pub fn find_container_by_name_or_uuid(&self, name_or_uuid: &str) -> Result<ContainerRow> {
+    pub fn find_container_by_name_or_uuid(&self, name_or_uuid: &str) -> error::Result<ContainerRow> {
         Uuid::parse_str(name_or_uuid)
-            .map_err(|e| DatabaseError::UuidError(e))
+            .map_err(|e| error::DatabaseError::UuidError(e))
             .and_then(|uuid| self.select_container_by_uuid(&uuid))
             .or_else(|_| {
                 let mut containers = self.select_container_by_name(name_or_uuid)?;
                 if containers.len() > 1 {
-                    Err(DatabaseError::ContainerAmbigiousNameError(name_or_uuid.to_string(), containers))
+                    Err(error::DatabaseError::ContainerAmbigiousNameError(name_or_uuid.to_string(), containers))
                 } else {
                     Ok(containers.remove(0))
                 }
