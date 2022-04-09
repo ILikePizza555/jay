@@ -1,50 +1,9 @@
-use core::fmt;
-use std::{path::Path, error::Error, fmt::{Display, Debug}};
+use std::{path::Path, error::Error, fmt::Debug};
 use chrono::{DateTime, Utc, NaiveDateTime};
-use rusqlite::{Connection, Row, Error as RusqliteError, named_params};
-use uuid::{Uuid, Error as UuidError};
+use rusqlite::{Connection, Row, named_params};
+use uuid::Uuid;
 
-#[derive(Debug)]
-pub enum DatabaseError {
-    ContainerUuidNotFoundError(Uuid),
-    ContainerAmbigiousNameError(String, Vec<ContainerRow>),
-
-    UuidError(UuidError),
-    SqliteError(RusqliteError)
-}
-
-impl Display for DatabaseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match &*self {
-            DatabaseError::ContainerUuidNotFoundError(uuid) => 
-                write!(f, "Container with uuid {} not found.", uuid.to_hyphenated().to_string()),
-
-            DatabaseError::ContainerAmbigiousNameError(name, matches) =>
-                write!(f, "Identifier {} is ambigious, found {} containers with that name.", name, matches.len()),
-
-            DatabaseError::UuidError(e) => fmt::Display::fmt(&e, f),
-            DatabaseError::SqliteError(e) => fmt::Display::fmt(&e, f)
-        }
-    }
-}
-
-impl Error for DatabaseError {
-
-}
-
-impl From<UuidError> for DatabaseError {
-    fn from(e: UuidError) -> Self {
-        DatabaseError::UuidError(e)
-    }
-}
-
-impl From<RusqliteError> for DatabaseError {
-    fn from(e: RusqliteError) -> Self {
-        DatabaseError::SqliteError(e)
-    }
-}
-
-type Result<T> = core::result::Result<T, DatabaseError>;
+mod error;
 
 /// DTO object used to hold a row of data from the 'items' table.
 #[derive(Debug)]
