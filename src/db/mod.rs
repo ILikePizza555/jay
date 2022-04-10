@@ -87,12 +87,6 @@ impl ContainerRow {
     }
 }
 
-/// Used to hold the result when querying both the 'items' and 'containers' tables.
-pub enum ItemOrContainerRow {
-    Item (ItemRow),
-    Container (ContainerRow)
-}
-
 /// Wrapper around the rusqlite Connection object to provide our own query methods on.
 pub struct DatabaseConnection (Connection);
 
@@ -142,32 +136,6 @@ impl DatabaseConnection {
         assert!(result == 1);
 
         Ok(())
-    }
-
-    /// Selects all items and containers in the catalogue and returns them.
-    pub fn select_all_items_and_containers(&self) -> error::Result<Vec<ItemOrContainerRow>> {
-        let mut statement = self.0.prepare(
-        r#"SELECT 'item' as object_type, uuid, name, description, type, created_date FROM items
-               UNION
-               SELECT 'container' as object_type, uuid, name, description, type, created_date FROM containers;"#)?;
-
-        // Yeah, I'm returning a vector instead of an interator or something
-        // I know it's not the "idiomatic" way of doing things in Rust,
-        // but fucking rusqlite is doing some insane bullshit with lifetimes and the way it's query's functions work
-        // and I am *tired* of dealing with the god-damn borrow checker.
-        let r: error::Result<Vec<ItemOrContainerRow>> = statement.query_and_then([], |row| {
-            let object_type: String = row.get(0)?;
-
-            if object_type.eq_ignore_ascii_case("item") {
-                Ok(ItemOrContainerRow::Item(ItemRow::from_row_offset(row, 1)?))
-            } else if object_type.eq_ignore_ascii_case("container") {
-                Ok(ItemOrContainerRow::Container(ContainerRow::from_row_offset(row, 1)?))
-            } else {
-                panic!("object type was not item or container")
-            }
-        })?.collect();
-
-        r
     }
 
     /// Selects container(s) from the database with the specified name
