@@ -1,4 +1,4 @@
-use std::{path::Path, error::Error, fmt::Debug};
+use std::{path::Path, fmt::Debug};
 use chrono::{DateTime, Utc, NaiveDateTime};
 use rusqlite::{Connection, Row, named_params};
 use uuid::Uuid;
