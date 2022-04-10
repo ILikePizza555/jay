@@ -53,8 +53,14 @@ enum AddCommands {
 
 #[derive(Subcommand)]
 enum ListCommands {
+    /// Lists all objects in the database.
     All,
-    Container { name_or_id: String }
+    /// Lists all containers with the specified name or id. If not specified, lists all containers.
+    Container { name_or_id: Option<String> },
+    /// Lists all items with the specified name or id
+    Item { name_or_id: Option<String> },
+    /// Lists all objects inside the specified container.
+    Within { container_name_or_id: Option<String> }
 }
 
 fn main() {
