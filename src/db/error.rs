@@ -1,7 +1,7 @@
 use core::fmt;
 use uuid::{Uuid, Error as UuidError};
 use rusqlite::Error as RusqliteError;
-use crate::db::ContainerRow;
+use super::dto::ContainerRow;
 
 #[derive(Debug)]
 pub enum DatabaseError {
