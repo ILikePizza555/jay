@@ -1,7 +1,4 @@
 use clap::{Parser, Subcommand};
-use db::DatabaseConnection;
-
-mod db;
 
 #[derive(Parser)]
 struct Cli {
@@ -66,18 +63,8 @@ enum ListCommands {
 fn main() {
     let cli = Cli::parse();
 
-    let db_connection = DatabaseConnection::open("./jay.db").expect("Could not connect to database!");
-
     match cli.command {
         ActionCommands::List(ListCommands::All) => {
-            let items = db_connection.select_all_items_and_containers().expect("Error executing query.");
-
-            for item in items {
-                match item {
-                    db::ItemOrContainerRow::Item(i) => println!("Item: {:?}", i),
-                    db::ItemOrContainerRow::Container(c) => println!("Container: {:?}", c),
-                }
-            }
         },
         _ => (),
     }
