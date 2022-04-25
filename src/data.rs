@@ -18,12 +18,19 @@ impl JsonDataService {
         let mut file_lock = FileLock::lock(path, is_blocking, file_options)?;
         let mut json_string: String = String::new();
         file_lock.file.read_to_string(&mut json_string)?;
-        let data: JayData = json5::from_str(&json_string)?;
+        let data: JayData = serde_json::from_str(&json_string)?;
 
         Ok(JsonDataService{
             json_file: file_lock,
             data: data
         })
+    }
+
+    pub fn flush(&self) -> Result<(), Error> {
+        serde_json::to_writer(&self.json_file.file, &self.data)
+            .map_err(|e| -> Error {
+                e.into()
+            })
     }
 }
 
@@ -33,9 +40,10 @@ pub struct JayData {
     extra: HashMap<String, serde_json::Value>
 }
 
+#[derive(Debug)]
 pub enum Error {
     IoError(std::io::Error),
-    Json5Error(json5::Error)
+    JsonError(serde_json::Error)
 }
 
 impl From<std::io::Error> for Error {
@@ -44,8 +52,8 @@ impl From<std::io::Error> for Error {
     }
 }
 
-impl From<json5::Error> for Error {
-    fn from(e: json5::Error) -> Self {
-        Self::Json5Error(e)
+impl From<serde_json::Error> for Error {
+    fn from(e: serde_json::Error) -> Self {
+        Self::JsonError(e)
     }
 }
