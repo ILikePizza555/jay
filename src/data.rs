@@ -21,7 +21,13 @@ impl JsonDataService {
         let mut file_lock = FileLock::lock(path, is_blocking, file_options)?;
         let mut json_string: String = String::new();
         file_lock.file.read_to_string(&mut json_string)?;
-        let data: JayData = serde_json::from_str(&json_string)?;
+
+
+        let data: JayData = if json_string.is_empty() {
+            JayData::default()
+        } else {
+            serde_json::from_str(&json_string)?
+        };
 
         Ok(JsonDataService{
             json_file: file_lock,
@@ -43,6 +49,16 @@ pub struct JayData {
     pub items: Vec<ItemModel>,
     #[serde(flatten)]
     extra: HashMap<String, serde_json::Value>
+}
+
+impl Default for JayData {
+    fn default() -> Self {
+        JayData { 
+            containers: Vec::new(),
+            items: Vec::new(),
+            extra: HashMap::new()
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
