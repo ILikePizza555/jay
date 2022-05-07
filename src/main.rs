@@ -1,6 +1,9 @@
 mod data;
 
+use std::collections::HashMap;
+
 use clap::{Parser, Subcommand};
+use data::JsonDataService;
 
 #[derive(Parser)]
 struct Cli {
@@ -39,6 +42,7 @@ enum AddCommands {
     },
 
     Container {
+        /// The name of the container.
         name: String,
         location: Option<String>,
 
@@ -64,10 +68,19 @@ enum ListCommands {
 
 fn main() {
     let cli = Cli::parse();
+    let mut data = JsonDataService::new("jay.json", true).expect("Error reading jay.json.");
 
     match cli.command {
-        ActionCommands::List(ListCommands::All) => {
+        ActionCommands::Add(AddCommands::Container { name, location, description, r_type }) => {
+            let location_value = serde_json::to_value(location).expect("Error parsing location parameter.");
+            let r_type_value = serde_json::to_value(r_type).expect("Error parsing type parameter.");
+            let extras = HashMap::from([
+                ("location".to_string(), location_value),
+                ("type".to_string(), r_type_value)
+            ]);
+
+            data.data.containers.push(data::ContainerModel::new(name, description, Some(extras)));
         },
-        _ => (),
+        _ => println!("Not implemented")
     }
 }
