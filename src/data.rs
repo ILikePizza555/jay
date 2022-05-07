@@ -47,19 +47,23 @@ pub struct JayData {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ContainerModel {
     pub uuid: Uuid,
-    pub name: String,
     pub created_date: DateTime<Utc>,
+
+    pub name: String,
+    pub description: Option<String>,
+
     #[serde(flatten)]
     pub extra: HashMap<String, serde_json::Value>
 }
 
 impl ContainerModel {
-    pub fn new(name: String) -> Self {
+    pub fn new(name: String, description: Option<String>, extra: Option<HashMap<String, serde_json::Value>>) -> Self {
         Self {
             uuid: Uuid::new_v4(),
-            name: name,
             created_date: Utc::now(),
-            extra: HashMap::new()
+            name,
+            description,
+            extra: extra.unwrap_or_default()
         }
     }
 }
