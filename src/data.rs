@@ -8,7 +8,7 @@ use uuid::Uuid;
 /// Only one JsonDataService should be instantiated per file.
 pub struct JsonDataService {
     json_file: FileLock,
-    data: JayData,
+    pub data: JayData,
 }
 
 impl JsonDataService {
@@ -34,85 +34,53 @@ impl JsonDataService {
                 e.into()
             })
     }
-
-    pub fn select_container_by_uuid(&self, uuid: Uuid) -> Result<&Container, Error> {
-        for c in &self.data.containers {
-            if c.uuid == uuid {
-                return Ok(c);
-            }
-        }
-
-        Err(Error::UuidNotFound(uuid))
-    }
-
-    pub fn select_item_by_uuid(&self, uuid: Uuid) -> Result<&Container, Error> {
-        for c in &self.data.containers {
-            if c.uuid == uuid {
-                return Ok(c);
-            }
-        }
-
-        Err(Error::UuidNotFound(uuid))
-    }
-
-    pub fn insert_container(&mut self, container: Container) -> () {
-        self.data.history.push(History::Created {
-            record_uuid: container.uuid,
-            datetime: Utc::now()
-        });
-
-        self.data.containers.push(container);
-    }
-
-    pub fn insert_item(&mut self, item: Item) -> () {
-        self.data.history.push(History::Created {
-            record_uuid: item.uuid,
-            datetime: Utc::now()
-        });
-
-        self.data.items.push(item);
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JayData {
-    containers: Vec<Container>,
-    items: Vec<Item>,
-    history: Vec<History>,
+    pub containers: Vec<ContainerModel>,
+    pub items: Vec<ItemModel>,
     #[serde(flatten)]
     extra: HashMap<String, serde_json::Value>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Container {
-    uuid: Uuid,
-    name: String,
+pub struct ContainerModel {
+    pub uuid: Uuid,
+    pub name: String,
+    pub created_date: DateTime<Utc>,
     #[serde(flatten)]
-    extra: HashMap<String, serde_json::Value>
+    pub extra: HashMap<String, serde_json::Value>
+}
+
+impl ContainerModel {
+    pub fn new(name: String) -> Self {
+        Self {
+            uuid: Uuid::new_v4(),
+            name: name,
+            created_date: Utc::now(),
+            extra: HashMap::new()
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Item {
-    uuid: Uuid,
-    name: String,
+pub struct ItemModel {
+    pub uuid: Uuid,
+    pub name: String,
+    pub created_date: DateTime<Utc>,
     #[serde(flatten)]
-    extra: HashMap<String, serde_json::Value>
+    pub extra: HashMap<String, serde_json::Value>
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub enum History {
-    Created {
-        record_uuid: Uuid,
-        datetime: DateTime<Utc>,
-    },
-    Modified {
-        record_uuid: Uuid,
-        datetime: DateTime<Utc>,
-        deltas: HashMap<String, serde_json::Value>,
-    },
-    Deleted {
-        record_uuid: Uuid,
-        datetime: DateTime<Utc>
+impl ItemModel {
+    pub fn new(name: String) -> Self {
+        Self {
+            uuid: Uuid::new_v4(),
+            name: name,
+            created_date: Utc::now(),
+            extra: HashMap::new()
+        }
     }
 }
 
@@ -120,7 +88,6 @@ pub enum History {
 pub enum Error {
     IoError(std::io::Error),
     JsonError(serde_json::Error),
-    UuidNotFound(Uuid),
 }
 
 impl From<std::io::Error> for Error {
