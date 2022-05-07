@@ -14,6 +14,7 @@ pub struct JsonDataService {
 impl JsonDataService {
     pub fn new<P: AsRef<Path>>(path: P, is_blocking: bool) -> Result<Self, Error> {
         let file_options = FileOptions::new()
+            .read(true)
             .write(true)
             .create(true);
         
