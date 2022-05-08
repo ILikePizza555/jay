@@ -1,9 +1,8 @@
-mod data;
+mod jay_data;
 
 use std::collections::HashMap;
 
 use clap::{Parser, Subcommand};
-use data::JsonDataService;
 
 #[derive(Parser)]
 struct Cli {
