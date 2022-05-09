@@ -6,8 +6,8 @@ use uuid::Uuid;
 /// The root model. Holds all collections.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JayDataModel {
-    containers: Vec<ContainerModel>,
-    items: Vec<ItemModel>,
+    pub containers: Vec<ContainerModel>,
+    pub items: Vec<ItemModel>,
     #[serde(flatten)]
     extra: HashMap<String, serde_json::Value>
 }
