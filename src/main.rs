@@ -74,9 +74,15 @@ fn main() {
 
     match cli.command {
         ActionCommands::Add(AddCommands::Container { name, location, description, r_type }) => {
-            let location_uuid = evert(location.map(|uuid_str| {
-                service.find_container_by_uuid_str(&uuid_str).map(|v| v.uuid)
-            })).expect("Error in provided location.");
+            let location_uuid =
+                evert(
+                    location.map(
+                        |l| get_container_by_location(&service, l.as_str()).map(
+                             |c| c.uuid
+                        )
+                    )
+                )
+                .expect("Error with provided location.");
 
             let r_type_value = serde_json::to_value(r_type).expect("Error parsing type parameter.");
             let extras = HashMap::from([
@@ -90,6 +96,31 @@ fn main() {
     }
 
     service.flush().expect("Error writing to jay.json.");
+}
+
+/// Checks if the provided location is a uuid. 
+/// If it is, then searches containers for a match. 
+/// Otherwise searches containers for one with the same name as location.
+/// If multiple are found, an error is returned. 
+fn get_container_by_location<'l>(service: &'l JsonDataService, location: &str) -> Result<&'l ContainerModel, Error> {
+    match <uuid::Uuid as std::str::FromStr>::from_str(location) {
+        Err(_) => {
+            let name_matches: Vec<&ContainerModel> = service.models.containers.iter()
+                .filter(|&c| c.name == location)
+                .collect();
+            
+            if name_matches.len() == 1 {
+                Ok(name_matches[0])
+            } else if name_matches.is_empty() {
+                Err(Error::NameNotFoundError(location.to_string()))
+            } else {
+                Err(Error::AmbigiousNameError(location.to_string()))
+            }
+        },
+        Ok(uuid) => {
+            service.find_container_by_uuid(uuid)
+        }
+    }
 }
 
 fn evert<T, E>(x: Option<Result<T, E>>) -> Result<Option<T>, E> {
