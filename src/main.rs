@@ -86,6 +86,8 @@ fn main() {
         },
         _ => println!("Not implemented")
     }
+
+    service.flush().expect("Error writing to jay.json.");
 }
 
 fn evert<T, E>(x: Option<Result<T, E>>) -> Result<Option<T>, E> {
