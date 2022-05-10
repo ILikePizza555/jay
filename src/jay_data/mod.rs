@@ -1,6 +1,6 @@
 pub mod models;
 
-use std::{path::Path, io::Read, str::FromStr};
+use std::{path::Path, io::{Read, Seek, SeekFrom}, str::FromStr};
 use file_lock::{FileLock, FileOptions};
 use uuid::Uuid;
 
@@ -24,7 +24,6 @@ impl JsonDataService {
         let mut json_string: String = String::new();
         file_lock.file.read_to_string(&mut json_string)?;
 
-
         let models: JayDataModel = if json_string.is_empty() {
             JayDataModel::default()
         } else {
@@ -38,7 +37,12 @@ impl JsonDataService {
     }
 
     pub fn flush(&self) -> Result<(), Error> {
-        serde_json::to_writer(&self.json_file.file, &self.models)
+        // Truncate the file before writing to it. Not doing this results in invalid json or null bytes or other bad things.
+        let mut file = &self.json_file.file;
+        file.set_len(0)?;
+        file.seek(SeekFrom::Start(0))?;
+        
+        serde_json::to_writer(file, &self.models)
             .map_err(|e| -> Error {
                 e.into()
             })
