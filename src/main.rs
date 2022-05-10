@@ -1,8 +1,10 @@
 mod jay_data;
+mod error;
 
 use std::collections::HashMap;
 
 use clap::{Parser, Subcommand};
+use error::Error;
 use jay_data::{JsonDataService, models::ContainerModel};
 
 #[derive(Parser)]

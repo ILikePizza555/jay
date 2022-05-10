@@ -1,5 +1,6 @@
 pub mod models;
 
+use crate::error::Error;
 use std::{path::Path, io::{Read, Seek, SeekFrom}, str::FromStr};
 use file_lock::{FileLock, FileOptions};
 use uuid::Uuid;
@@ -52,7 +53,7 @@ impl JsonDataService {
         self.models.containers 
             .iter()
             .find(|&c| c.uuid == uuid)
-            .ok_or(Error::UuidNotFound(uuid))
+            .ok_or(Error::UuidNotFoundError(uuid))
     }
 
     pub fn find_container_by_uuid_str(&self, uuid_str: &str) -> Result<&ContainerModel, Error> {
@@ -64,37 +65,11 @@ impl JsonDataService {
         self.models.items
             .iter()
             .find(|&i| i.uuid == uuid)
-            .ok_or(Error::UuidNotFound(uuid))
+            .ok_or(Error::UuidNotFoundError(uuid))
     }
 
     pub fn find_item_by_uuid_str(&self, uuid_str: &str) -> Result<&ItemModel, Error> {
         let uuid = Uuid::from_str(uuid_str)?;
         self.find_item_by_uuid(uuid)
-    }
-}
-
-#[derive(Debug)]
-pub enum Error {
-    IoError(std::io::Error),
-    JsonError(serde_json::Error),
-    UuidError(uuid::Error),
-    UuidNotFound(Uuid)
-}
-
-impl From<std::io::Error> for Error {
-    fn from(e: std::io::Error) -> Self {
-        Self::IoError(e)
-    }
-}
-
-impl From<serde_json::Error> for Error {
-    fn from(e: serde_json::Error) -> Self {
-        Self::JsonError(e)
-    }
-}
-
-impl From<uuid::Error> for Error {
-    fn from(e: uuid::Error) -> Self {
-        Self::UuidError(e)
     }
 }
