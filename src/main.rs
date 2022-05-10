@@ -3,6 +3,7 @@ mod jay_data;
 use std::collections::HashMap;
 
 use clap::{Parser, Subcommand};
+use jay_data::{JsonDataService, models::ContainerModel};
 
 #[derive(Parser)]
 struct Cli {
@@ -67,19 +68,26 @@ enum ListCommands {
 
 fn main() {
     let cli = Cli::parse();
-    let mut data = JsonDataService::new("jay.json", true).expect("Error reading jay.json.");
+    let mut service = JsonDataService::new("jay.json", true).expect("Error reading jay.json.");
 
     match cli.command {
         ActionCommands::Add(AddCommands::Container { name, location, description, r_type }) => {
-            let location_value = serde_json::to_value(location).expect("Error parsing location parameter.");
+            let location_uuid = evert(location.map(|uuid_str| {
+                service.find_container_by_uuid_str(&uuid_str).map(|v| v.uuid)
+            })).expect("Error in provided location.");
+
             let r_type_value = serde_json::to_value(r_type).expect("Error parsing type parameter.");
             let extras = HashMap::from([
-                ("location".to_string(), location_value),
                 ("type".to_string(), r_type_value)
             ]);
+            let container_model = ContainerModel::new(name, description, location_uuid, Some(extras));
 
-            data.data.containers.push(data::ContainerModel::new(name, description, Some(extras)));
+            service.models.containers.push(container_model)
         },
         _ => println!("Not implemented")
     }
+}
+
+fn evert<T, E>(x: Option<Result<T, E>>) -> Result<Option<T>, E> {
+    x.map_or(Ok(None), |v| v.map(Some))
 }
