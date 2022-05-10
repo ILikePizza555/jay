@@ -47,7 +47,7 @@ impl JsonDataService {
     pub fn find_container_by_uuid(&self, uuid: Uuid) -> Result<&ContainerModel, Error> {
         self.models.containers 
             .iter()
-            .find(|&&c| c.uuid == uuid)
+            .find(|&c| c.uuid == uuid)
             .ok_or(Error::UuidNotFound(uuid))
     }
 
@@ -59,7 +59,7 @@ impl JsonDataService {
     pub fn find_item_by_uuid(&self, uuid: Uuid) -> Result<&ItemModel, Error> {
         self.models.items
             .iter()
-            .find(|&&i| i.uuid == uuid)
+            .find(|&i| i.uuid == uuid)
             .ok_or(Error::UuidNotFound(uuid))
     }
 
