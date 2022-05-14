@@ -53,19 +53,27 @@ impl ContainerModel {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ItemModel {
     pub uuid: Uuid,
-    pub name: String,
     pub created_date: DateTime<Utc>,
+
+    pub name: String,
+    pub location: Uuid,
+    pub quantity: u64,
+    pub description: Option<String>,
+
     #[serde(flatten)]
     pub extra: HashMap<String, serde_json::Value>
 }
 
 impl ItemModel {
-    pub fn new(name: String) -> Self {
+    pub fn new(name: String, description: Option<String>, location: Uuid, quantity: u64, extra: Option<HashMap<String, serde_json::Value>>) -> Self {
         Self {
             uuid: Uuid::new_v4(),
-            name: name,
             created_date: Utc::now(),
-            extra: HashMap::new()
+            name,
+            location,
+            quantity,
+            description,
+            extra: extra.unwrap_or_default()
         }
     }
 }

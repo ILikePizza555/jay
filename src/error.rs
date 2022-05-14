@@ -7,7 +7,8 @@ pub enum Error {
     UuidError(uuid::Error),
     UuidNotFoundError(Uuid),
     NameNotFoundError(String),
-    AmbigiousNameError(String)
+    AmbigiousNameError(String),
+    UuidRequiredError()
 }
 
 impl From<std::io::Error> for Error {

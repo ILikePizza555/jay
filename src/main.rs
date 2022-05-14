@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use clap::{Parser, Subcommand};
 use error::Error;
-use jay_data::{JsonDataService, models::ContainerModel};
+use jay_data::{JsonDataService, models::{ContainerModel, ItemModel}};
 
 #[derive(Parser)]
 struct Cli {
@@ -34,7 +34,7 @@ enum AddCommands {
         location: String,
 
         #[clap(default_value_t = 1)]
-        quantity: usize,
+        quantity: u64,
 
         #[clap(short, long)]
         description: Option<String>,
@@ -56,6 +56,22 @@ enum AddCommands {
     }
 }
 
+impl AddCommands {
+    fn get_location(&self) -> Option<&str> {
+        match self {
+            Self::Item {location, ..} => Some(location),
+            Self::Container {location, ..} => location.as_ref()
+        }.map(|s| s.as_str())
+    }
+
+    fn get_type(&self) -> Option<&str> {
+        match self {
+            Self::Item {r_type, ..} => r_type.as_ref(),
+            Self::Container {r_type, ..} => r_type.as_ref()
+        }.map(|s| s.as_str()) 
+    }
+}
+
 #[derive(Subcommand)]
 enum ListCommands {
     /// Lists all objects in the database.
@@ -73,29 +89,37 @@ fn main() {
     let mut service = JsonDataService::new("jay.json", true).expect("Error reading jay.json.");
 
     match cli.command {
-        ActionCommands::Add(AddCommands::Container { name, location, description, r_type }) => {
-            let location_uuid =
-                evert(
-                    location.map(
-                        |l| get_container_by_location(&service, l.as_str()).map(
-                             |c| c.uuid
-                        )
-                    )
-                )
-                .expect("Error with provided location.");
-
-            let r_type_value = serde_json::to_value(r_type).expect("Error parsing type parameter.");
-            let extras = HashMap::from([
-                ("type".to_string(), r_type_value)
-            ]);
-            let container_model = ContainerModel::new(name, description, location_uuid, Some(extras));
-
-            service.models.containers.push(container_model)
-        },
+        ActionCommands::Add(add_cmd) => add_object(&mut service, add_cmd).expect("Error creating new object."),
         _ => println!("Not implemented")
     }
 
     service.flush().expect("Error writing to jay.json.");
+}
+
+fn add_object(service: &mut JsonDataService, add_cmd: AddCommands) -> Result<(), Error> {
+    let location_uuid = add_cmd.get_location().map(
+        |l| get_container_by_location(&service, l)
+            .map(|c| c.uuid)
+    )
+        .transpose()?;
+    
+    let type_value = serde_json::to_value(add_cmd.get_type())?;
+    let extras = HashMap::from([
+        ("type".to_string(), type_value)
+    ]);
+
+    match add_cmd {
+        AddCommands::Item { name, location: _, quantity, description, r_type: _ } => {
+            let uuid = location_uuid.ok_or(Error::UuidRequiredError())?;
+            let item_model = ItemModel::new(name, description, uuid, quantity, Some(extras));
+
+            Ok(service.models.items.push(item_model))
+        }
+        AddCommands::Container {name, location: _, description, r_type: _} => {
+            let container_model = ContainerModel::new(name, description, location_uuid, Some(extras));
+            Ok(service.models.containers.push(container_model))
+        }
+    }
 }
 
 /// Checks if the provided location is a uuid. 
@@ -121,8 +145,4 @@ fn get_container_by_location<'l>(service: &'l JsonDataService, location: &str) -
             service.find_container_by_uuid(uuid)
         }
     }
-}
-
-fn evert<T, E>(x: Option<Result<T, E>>) -> Result<Option<T>, E> {
-    x.map_or(Ok(None), |v| v.map(Some))
 }
