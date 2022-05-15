@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 use chrono::{Utc, DateTime};
 use serde::{Serialize, Deserialize};
+use tabled::Tabled;
 use uuid::Uuid;
+
+use crate::useful::{format_table_uuid, format_table_option_display, format_table_option};
 
 /// The root model. Holds all collections.
 #[derive(Debug, Serialize, Deserialize)]
@@ -46,6 +49,30 @@ impl ContainerModel {
             location,
             extra: extra.unwrap_or_default()
         }
+    }
+}
+
+impl Tabled for ContainerModel {
+    const LENGTH: usize = 48;
+
+    fn fields(&self) -> Vec<String> {
+        vec! [
+            format_table_uuid(&self.uuid),
+            self.created_date.to_rfc2822(),
+            self.name.clone(),
+            format_table_option_display(&self.description),
+            format_table_option(&self.location, |uuid| format_table_uuid(uuid))
+        ]
+    }
+
+    fn headers() -> Vec<String> {
+        vec![
+            String::from("UUID"),
+            String::from("Created Date"),
+            String::from("Name"),
+            String::from("Description"),
+            String::from("Location"),
+        ]
     }
 }
 
