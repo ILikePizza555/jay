@@ -27,6 +27,16 @@ pub enum AddCommand {
     Container(AddContainerArgs)
 }
 
+// Both AddItemArgs and AddContainerArgs have a custom parser for specifically because of location.
+// The complexity comes from cramming the values of two mutually-exclusive flags into one field.
+
+// In the past I had the idea of allowing the user to specify either a uuid or a name for the 
+// location of the new object under one command-line parameter, and having the computer guess 
+// whether it was a uuid or name. This is possible, and the code to do it isn't nearly as complex,
+// but I think it leads to bad UX. For example, what if the user mistyped a uuid? Because the 
+// uuid failed to parse, it would get treated as a name and the error would be "Couldn't find name"
+// instead of "invalid uuid". Specifying the type as a flag lets the computer provide correct error messages.
+
 #[derive(Debug)]
 pub struct AddItemArgs {
     pub name: String,
