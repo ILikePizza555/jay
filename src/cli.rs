@@ -29,11 +29,11 @@ pub enum AddCommand {
 
 #[derive(Debug)]
 pub struct AddItemArgs {
-    name: String,
-    location: Location,
-    quantity: u64,
-    description: Option<String>,
-    r_type: Option<String>
+    pub name: String,
+    pub location: Location,
+    pub quantity: u64,
+    pub description: Option<String>,
+    pub r_type: Option<String>
 }
 
 impl FromArgMatches for AddItemArgs {
@@ -42,7 +42,8 @@ impl FromArgMatches for AddItemArgs {
             .map(|s| s.to_owned())
             .ok_or(clap::Error::raw(clap::ErrorKind::ArgumentNotFound, "Parse Error: Missing required arugment 'name'."))?;
         
-        let location = Location::parse_from_matches(matches)?;
+        let location = Location::parse_from_matches(matches)?
+            .expect("Neither uuid-location nor name-location provided. This error should never happen.");
 
         let quantity: u64 = matches.value_of_t("quantity")?;
 
@@ -60,7 +61,9 @@ impl FromArgMatches for AddItemArgs {
             .map(|s| s.to_owned())
             .ok_or(clap::Error::raw(clap::ErrorKind::ArgumentNotFound, "Parse Error: Missing required argument 'name'."))?;
 
-        self.location = Location::parse_from_matches(matches)?;
+        self.location = Location::parse_from_matches(matches)?
+            .expect("Neither uuid-location nor name-location provided. This error should never happen.");
+
         self.quantity = matches.value_of_t("quantity")?;
         
         if let Some(description) = matches.value_of("description") {
@@ -77,76 +80,70 @@ impl FromArgMatches for AddItemArgs {
 
 impl Args for AddItemArgs {
     fn augment_args(cmd: clap::Command<'_>) -> clap::Command<'_> {
-        cmd
-            .args(&[
-                arg!(-n --name <NAME> "The name of the new item."),
-                arg!(--"uuid-location" <LOCATION> "The uuid of the container in which this item is stored.").required(false),
-                arg!(--"name-location" <LOCATION> "The name of the container in which this item is stored.").required(false),
-                arg!(-q --quantity [QUANTITY] "The quantity of items. Default is one.")
-                    .visible_alias("count")
-                    .visible_short_alias('c')
-                    .default_value("1"),
-                arg!(--description [description] "An optional description of the item."),
-                arg!(--"type").takes_value(true)
-            ])
-            .group(ArgGroup::new("location")
-                .args(&["uuid-location", "name-location"])
-                .required(true))
+        add_item_augment_args(cmd)
     }
 
     fn augment_args_for_update(cmd: Command<'_>) -> Command<'_> {
-        cmd
-            .args(&[
-                arg!(-n --name <name> "The name of the new item."),
-                arg!(--uuid-location <location> "The uuid of the container in which this item is stored."),
-                arg!(--name-location <name> "The name of the container in which this item is stored."),
-                arg!(-q --quantity [quantity] "The quantity of items.")
-                    .visible_alias("count")
-                    .visible_short_alias('c')
-                    .default_value("1"),
-                arg!(--description [description] "An optional description of the item."),
-                arg!(--"type").takes_value(true)
-            ])
-            .group(ArgGroup::new("location")
-                .args(&["uuid-location", "name-location"])
-                .required(true))
+        add_item_augment_args(cmd)
     }
 }
 
 pub struct AddContainerArgs {
-    name: String,
-    location: Location,
-    description: Option<String>,
-    r_type: Option<String>
+    pub name: String,
+    pub location: Option<Location>,
+    pub description: Option<String>,
+    pub r_type: Option<String>
 }
 
 impl FromArgMatches for AddContainerArgs {
     fn from_arg_matches(matches: &clap::ArgMatches) -> Result<Self, clap::Error> {
-        todo!()
+        let name = matches.value_of("name")
+            .map(|s| s.to_owned())
+            .ok_or(clap::Error::raw(clap::ErrorKind::ArgumentNotFound, "Parse Error: Missing required argument 'name'."))?;
+        
+        let location = Location::parse_from_matches(matches)?;
+
+        Ok(AddContainerArgs {
+            name,
+            location,
+            description: matches.value_of("description").map(|v| v.to_owned()),
+            r_type: matches.value_of("type").map(|v| v.to_owned())
+        })
     }
 
     fn update_from_arg_matches(&mut self, matches: &clap::ArgMatches) -> Result<(), clap::Error> {
-        todo!()
+        self.name = matches.value_of("name")
+            .map(|s| s.to_owned())
+            .ok_or(clap::Error::raw(clap::ErrorKind::ArgumentNotFound, "Parse Error: Missing required argument 'name'."))?;
+
+        if let Some(location) = Location::parse_from_matches(matches)? {
+            self.location = Some(location);
+        }
+
+        if let Some(description) = matches.value_of("description") {
+            self.description = Some(description.to_owned());
+        }
+
+        if let Some(r_type) = matches.value_of("type") {
+            self.r_type = Some(r_type.to_owned());
+        }
+
+        Ok(())
     }
 }
 
 impl Args for AddContainerArgs {
     fn augment_args(cmd: Command<'_>) -> Command<'_> {
-        cmd
-            .args(&[
-                arg!(-n --name <name> "The name of the new container."),
-                arg!(--description [description] "An optional description of the item."),
-                arg!(--"type").takes_value(true)
-            ])
+        add_container_augment_args(cmd)
     }
 
     fn augment_args_for_update(cmd: Command<'_>) -> Command<'_> {
-        todo!()
+        add_container_augment_args(cmd)
     }
 }
 
 #[derive(Subcommand)]
-enum ListCommands {
+pub enum ListCommands {
     /// Lists all objects in the database.
     All,
     /// Lists all containers with the specified name or id. If not specified, lists all containers.
@@ -159,23 +156,57 @@ enum ListCommands {
 
 /// Differentiates between a uuid or a name for setting a location
 #[derive(Debug)]
-enum Location {
+pub enum Location {
     Uuid(Uuid),
     Name(String)
 }
 
 impl Location {
-    fn parse_from_matches(matches: &clap::ArgMatches) -> Result<Self, clap::Error> {
+    fn parse_from_matches(matches: &clap::ArgMatches) -> Result<Option<Self>, clap::Error> {
         matches.value_of_t::<Uuid>("uuid-location")
-            .map(|uuid|  Self::Uuid(uuid))
+            .map(|uuid|  Some(Self::Uuid(uuid)))
             .or_else(|e|
                 if e.kind() == ErrorKind::ArgumentNotFound {
-                    let name = matches.value_of("name-location")
-                        .expect("Cannot parse AddItemArgs: Neither a uuid-location nor a name-location was provided.");
-                    Ok(Self::Name(name.to_owned()))
+                    Ok(matches.value_of("name-location").map(|n| Self::Name(n.to_owned())))
                 } else {
                     Err(e)
                 }
             )
     }
+}
+
+/// Adds the location args and ArgGroup to the `cmd`.
+fn add_location_args(cmd: clap::Command<'_>, required: bool) -> clap::Command<'_> {
+    cmd
+        .args(&[
+            arg!(--"uuid-location" <LOCATION> "The uuid of the container in which this item is stored.'")
+                .required(false),
+            arg!(--"name-location" <LOCATION> "The name of the container in which this item is stored.")
+                .required(false)
+        ])
+        .group(ArgGroup::new("location")
+            .args(&["uuid-location", "name-location"])
+            .required(required))
+}
+
+fn add_item_augment_args(cmd: Command<'_>) -> Command<'_> {
+    add_location_args(cmd, true)
+            .args(&[
+                arg!(-n --name <NAME> "The name of the new item."),
+                arg!(-q --quantity [QUANTITY] "The quantity of items. Default is one.")
+                    .visible_alias("count")
+                    .visible_short_alias('c')
+                    .default_value("1"),
+                arg!(--description [description] "An optional description of the item."),
+                arg!(--"type").takes_value(true)
+            ])
+}
+
+fn add_container_augment_args(cmd: Command<'_>) -> Command<'_> {
+    add_location_args(cmd, false)
+            .args(&[
+                arg!(-n --name <NAME> "The name of the new container."),
+                arg!(--description [DESCRIPTION] "An optional description of the item."),
+                arg!(--"type").takes_value(true)
+            ])
 }
