@@ -72,9 +72,9 @@ impl JsonDataService {
                 if name_matches.len() == 1 {
                     Ok(name_matches[0])
                 } else if name_matches.is_empty() {
-                    Err(Error::NameNotFoundError(*name))
+                    Err(Error::NameNotFoundError(name.clone()))
                 } else {
-                    Err(Error::AmbigiousNameError(*name))
+                    Err(Error::AmbigiousNameError(name.clone()))
                 }
             }
         }
