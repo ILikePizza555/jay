@@ -15,7 +15,7 @@ pub enum ActionCommand {
 
     /// List objects in the catalogue.
     #[clap(subcommand)]
-    List (ListCommands),
+    List (ListCommand),
 
     /// Remove an object from the catalogue.
     Delete { name_or_id: String }
@@ -153,7 +153,7 @@ impl Args for AddContainerArgs {
 }
 
 #[derive(Subcommand)]
-pub enum ListCommands {
+pub enum ListCommand {
     /// Lists all objects in the database.
     All,
     /// Lists all containers with the specified name or id. If not specified, lists all containers.
