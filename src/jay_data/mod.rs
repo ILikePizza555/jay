@@ -1,6 +1,6 @@
 pub mod models;
 
-use crate::error::Error;
+use crate::{error::Error, cli::Location};
 use std::{path::Path, io::{Read, Seek, SeekFrom}, str::FromStr};
 use file_lock::{FileLock, FileOptions};
 use uuid::Uuid;
@@ -49,16 +49,35 @@ impl JsonDataService {
             })
     }
 
-    pub fn find_container_by_uuid(&self, uuid: Uuid) -> Result<&ContainerModel, Error> {
+    pub fn select_containers_by_name(&self, name: &str) -> Vec<&ContainerModel> {
+        self.models.containers
+            .iter()
+            .filter(|&container| container.name == name)
+            .collect()
+    }
+
+    pub fn find_container_by_uuid(&self, uuid: Uuid) -> Result<&ContainerModel, Error> {        
         self.models.containers 
             .iter()
             .find(|&c| c.uuid == uuid)
             .ok_or(Error::UuidNotFoundError(uuid))
     }
 
-    pub fn find_container_by_uuid_str(&self, uuid_str: &str) -> Result<&ContainerModel, Error> {
-        let uuid = Uuid::from_str(uuid_str)?;
-        self.find_container_by_uuid(uuid)
+    pub fn find_container_by_location(&self, location: &Location) -> Result<&ContainerModel, Error> {
+        match location {
+            Location::Uuid(uuid) => self.find_container_by_uuid(*uuid),
+            Location::Name(name) => {
+                let name_matches: Vec<&ContainerModel> = self.select_containers_by_name(name.as_str());
+            
+                if name_matches.len() == 1 {
+                    Ok(name_matches[0])
+                } else if name_matches.is_empty() {
+                    Err(Error::NameNotFoundError(*name))
+                } else {
+                    Err(Error::AmbigiousNameError(*name))
+                }
+            }
+        }
     }
 
     pub fn find_item_by_uuid(&self, uuid: Uuid) -> Result<&ItemModel, Error> {
