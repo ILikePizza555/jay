@@ -1,13 +1,15 @@
 mod jay_data;
 mod error;
 mod cli;
+mod useful;
 
 use std::collections::HashMap;
 
 use clap::StructOpt;
 use error::Error;
 use jay_data::{JsonDataService, models::{ContainerModel, ItemModel}};
-use cli::{Cli, ActionCommand, AddCommand, AddItemArgs, AddContainerArgs};
+use cli::{Cli, ActionCommand, AddCommand, AddItemArgs, AddContainerArgs, ListCommand};
+use tabled::{Table, Style, Modify, Full, Alignment};
 
 
 fn main() {
@@ -17,6 +19,14 @@ fn main() {
 
     match cli.command {
         ActionCommand::Add(add_cmd) => add_object(&mut service, add_cmd).expect("Error creating new object."),
+        ActionCommand::List(ListCommand::All) => {
+            let containers_table = Table::new(&service.models.containers)
+                .with(Style::empty())
+                .with(Modify::new(Full).with(Alignment::left()));
+
+            println!("{}", containers_table);
+            println!("{:?}", service.models.items);
+        }
         _ => println!("Not implemented")
     }
 
