@@ -19,6 +19,7 @@
         ];
         commonBuildInputs = [
           pkgs.nodejs-16_x
+          pkgs.yarn
           rust-pkg
         ];
       in
