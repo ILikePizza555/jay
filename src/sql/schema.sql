@@ -1,52 +1,29 @@
-CREATE TABLE items (
-    uuid TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
+CREATE TABLE items_history (
+    id INTEGER PRIMARY KEY ASC,
+    'from' DATETIME DEFAULT (datetime()),
+    'to' DATETIME DEFAULT NULL,
+    uuid BLOB NOT NULL,
+    name TEXT,
     description TEXT,
     type TEXT,
-    quantity INTEGER DEFAULT 1,
-    created_date DATETIME NOT NULL,
-    modified_date DATETIME NOT NULL,
-    status TEXT NOT NULL
+    quantity INTEGER,
+    status TEXT,
+    deleted BOOLEAN DEFAULT 0
 );
 
-CREATE TABLE containers (
-    uuid TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    description TEXT,
+CREATE TRIGGER IF NOT EXISTS update_items_date_on_insert AFTER INSERT ON items_history
+BEGIN
+    UPDATE items_history
+    SET 'to' = NEW.'from'
+    WHERE id = (SELECT max(id) FROM items_history WHERE id != NEW.id AND uuid = NEW.uuid);
+END;
+
+CREATE TABLE containers_history (
+    id INTEGER PRIMARY KEY ASC,
+    'from' DATETIME DEFAULT (datetime()),
+    'to' DATETIME DEFAULT NULL
+    uuid BLOB NOT NULL,
+    name TEXT,
     type TEXT,
-    created_date DATETIME NOT NULL
+    deleted BOOLEAN DEFAULT 0,
 );
-
-CREATE TABLE item_locations (
-    item_uuid TEXT ,
-    container_uuid TEXT,
-    PRIMARY KEY (item_uuid, container_uuid)
-    FOREIGN KEY (item_uuid)
-        REFERENCES items (item_uuid)
-            ON DELETE CASCADE 
-            ON UPDATE NO ACTION,
-    FOREIGN KEY (container_uuid)
-        REFERENCES containers (container_uuid)
-            ON DELETE CASCADE 
-            ON UPDATE NO ACTION
-);
-
-/*
-CREATE TABLE audit (
-    id INTEGER PRIMARY KEY,
-    table TEXT NOT NULL,
-    field TEXT NOT NULL,
-    record_id BLOB NOT NULL,
-    old_value BLOB NOT NULL,
-    new_value BLOB NOT NULL,
-    who TEXT NOT NULL,
-    date DATETIME NOT NULL
-);
-
-CREATE TABLE audit_creation (
-    id INTEGER PRIMARY KEY,
-    table TEXT NOT NULL,
-    record_id BLOB NOT NULL,
-    who TEXT NOT NULL,
-    date DATETIME NOT NULL
-);*/
