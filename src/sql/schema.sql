@@ -11,7 +11,7 @@ CREATE TABLE items_history (
     deleted BOOLEAN DEFAULT 0
 );
 
-CREATE TRIGGER IF NOT EXISTS update_items_date_on_insert AFTER INSERT ON items_history
+CREATE TRIGGER update_items_date_on_insert AFTER INSERT ON items_history
 BEGIN
     UPDATE items_history
     SET 'to' = NEW.'from'
@@ -25,5 +25,5 @@ CREATE TABLE containers_history (
     uuid BLOB NOT NULL,
     name TEXT,
     type TEXT,
-    deleted BOOLEAN DEFAULT 0,
+    deleted BOOLEAN DEFAULT 0
 );
