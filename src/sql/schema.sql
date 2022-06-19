@@ -21,7 +21,7 @@ END;
 CREATE TABLE containers_history (
     id INTEGER PRIMARY KEY ASC,
     'from' DATETIME DEFAULT (datetime()),
-    'to' DATETIME DEFAULT NULL
+    'to' DATETIME DEFAULT NULL,
     uuid BLOB NOT NULL,
     name TEXT,
     type TEXT,
