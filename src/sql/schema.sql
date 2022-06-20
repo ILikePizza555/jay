@@ -22,7 +22,7 @@ END;
 CREATE VIEW current_items AS
 SELECT
     max(id) as item_history_id,
-    'from' as last_modified,
+    items_history.'from' as last_modified,
     uuid,
     name,
     description,
