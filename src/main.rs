@@ -57,10 +57,14 @@ fn main() -> Result<()> {
 
     match args.command {
         Commands::List => {
+            // query_map requires a mutable reference so we let mut here
             let mut statement = db_connection.prepare(
                 r#"SELECT item_history_id, last_modified, uuid, name, quantity, status, deleted
                         FROM current_items
                         WHERE deleted = 0"#)?;
+
+            // query_map creates an interator of Results of a tuple with our data.
+            // filter_map filters out the errors from the iterator while printing them to the stderr
             let mapped_rows = statement.query_map([], |row| Ok((
                 row.get::<usize, u64>(0)?,
                 row.get::<usize, DateTime<Utc>>(1)?,
@@ -70,6 +74,8 @@ fn main() -> Result<()> {
                 row.get::<usize, String>(5)?,
             )))?.filter_map(|result| result.map_err(|e| {eprintln!("{}", e)}).ok());
 
+            // Finally, output the data to stdout.
+            // This is a very simplistic way to format a table but it works for now.
             for (item_history_id, last_modified, uuid, name, quantity, status) in mapped_rows {
                 println!(
                     "{0: <3} {1:?} {2:?} {3: <3} {4: <10} {5}",
