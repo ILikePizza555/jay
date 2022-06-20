@@ -18,6 +18,21 @@ BEGIN
     WHERE id = (SELECT max(id) FROM items_history WHERE id != NEW.id AND uuid = NEW.uuid);
 END;
 
+CREATE VIEW current_items AS
+SELECT
+    max(id) as item_history_id,
+    uuid,
+    name,
+    description,
+    type,
+    quantity,
+    status,
+    deleted
+FROM
+    items_history
+GROUP BY
+    uuid;
+
 CREATE TABLE containers_history (
     id INTEGER PRIMARY KEY ASC,
     'from' DATETIME DEFAULT (datetime()),
