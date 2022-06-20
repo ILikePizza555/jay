@@ -2,6 +2,7 @@ CREATE TABLE items_history (
     id INTEGER PRIMARY KEY ASC,
     'from' DATETIME DEFAULT (datetime()),
     'to' DATETIME DEFAULT NULL,
+    who TEXT,
     uuid BLOB NOT NULL,
     name TEXT,
     description TEXT,
@@ -21,6 +22,7 @@ END;
 CREATE VIEW current_items AS
 SELECT
     max(id) as item_history_id,
+    'from' as last_modified,
     uuid,
     name,
     description,
