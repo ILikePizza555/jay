@@ -1,84 +1,54 @@
-use clap::{Parser, Subcommand};
-use db::DatabaseConnection;
-
 mod db;
 
-#[derive(Parser)]
-struct Cli {
+use clap::{Parser, Subcommand};
+use uuid::Uuid;
+
+#[derive(Debug, Parser)]
+struct CliArgs {
     #[clap(subcommand)]
-    command: ActionCommands
+    command: Commands
 }
 
-#[derive(Subcommand)]
-enum ActionCommands {
-    /// Create and insert a new object into the catalogue. 
-    #[clap(subcommand)]
-    Add (AddCommands),
-
-    /// List objects in the catalogue.
-    #[clap(subcommand)]
-    List (ListCommands),
-
-    /// Remove an object from the catalogue.
-    Delete { name_or_id: String }
-}
-
-#[derive(Subcommand)]
-enum AddCommands {
-    Item {
+#[derive(Debug, Subcommand)]
+enum Commands {
+    Add {
+        #[clap(short, long)]
         name: String,
-        location: String,
-
-        #[clap(default_value_t = 1)]
-        quantity: usize,
 
         #[clap(short, long)]
         description: Option<String>,
 
         #[clap(name = "type", short, long)]
-        r_type: Option<String>
+        r_type: Option<String>,
+
+        #[clap(short, long, default_value_t = 1)]
+        quantity: u64,
+
+        #[clap(short, long)]
+        status: Option<String>,
     },
-
-    Container {
-        name: String,
-        location: Option<String>,
+    Update {
+        #[clap(short, long)]
+        name: Option<String>,
 
         #[clap(short, long)]
         description: Option<String>,
 
         #[clap(name = "type", short, long)]
-        r_type: Option<String>
-    }
-}
+        r_type: Option<String>,
 
-#[derive(Subcommand)]
-enum ListCommands {
-    /// Lists all objects in the database.
-    All,
-    /// Lists all containers with the specified name or id. If not specified, lists all containers.
-    Container { name_or_id: Option<String> },
-    /// Lists all items with the specified name or id
-    Item { name_or_id: Option<String> },
-    /// Lists all objects inside the specified container.
-    Within { container_name_or_id: Option<String> }
+        #[clap(short, long)]
+        quantity: Option<u64>,
+
+        #[clap(short, long)]
+        status: Option<String>,
+    },
+    List,
+    History {
+        uuid: Uuid
+    },
 }
 
 fn main() {
-    let cli = Cli::parse();
-
-    let db_connection = DatabaseConnection::open("./jay.db").expect("Could not connect to database!");
-
-    match cli.command {
-        ActionCommands::List(ListCommands::All) => {
-            let items = db_connection.select_all_items_and_containers().expect("Error executing query.");
-
-            for item in items {
-                match item {
-                    db::ItemOrContainerRow::Item(i) => println!("Item: {:?}", i),
-                    db::ItemOrContainerRow::Container(c) => println!("Container: {:?}", c),
-                }
-            }
-        },
-        _ => (),
-    }
+    
 }
