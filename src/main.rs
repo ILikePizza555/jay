@@ -1,6 +1,7 @@
-mod db;
-
+use anyhow::{Context, Result};
+use chrono::{DateTime, Utc};
 use clap::{Parser, Subcommand};
+use rusqlite::Connection;
 use uuid::Uuid;
 
 #[derive(Debug, Parser)]
@@ -49,6 +50,38 @@ enum Commands {
     },
 }
 
-fn main() {
-    
+fn main() -> Result<()> {
+    let args = CliArgs::parse();
+
+    let db_connection = Connection::open("./jay.db")?;
+
+    match args.command {
+        Commands::List => {
+            let mut statement = db_connection.prepare(
+                r#"SELECT item_history_id, last_modified, uuid, name, quantity, status, deleted
+                        FROM current_items
+                        WHERE deleted = 0"#)?;
+            let mapped_rows = statement.query_map([], |row| Ok((
+                row.get::<usize, u64>(0)?,
+                row.get::<usize, DateTime<Utc>>(1)?,
+                row.get::<usize, Uuid>(2)?,
+                row.get::<usize, String>(3)?,
+                row.get::<usize, u64>(4)?,
+                row.get::<usize, String>(5)?,
+            )))?.filter_map(|result| result.map_err(|e| {eprintln!("{}", e)}).ok());
+
+            for (item_history_id, last_modified, uuid, name, quantity, status) in mapped_rows {
+                println!(
+                    "{0: <3} {1:?} {2:?} {3: <3} {4: <10} {5}",
+                    item_history_id, last_modified, uuid, quantity, status, name
+                );
+            }
+
+            Ok(())
+        },
+        _ => {
+            println!("Not implemented.");
+            Ok(())
+        }
+    }
 }
