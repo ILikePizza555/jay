@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
 use clap::{Parser, Subcommand};
-use rusqlite::{Connection, Statement};
+use rusqlite::{Connection, params};
 use uuid::Uuid;
 
 #[derive(Debug, Parser)]
@@ -29,6 +29,8 @@ enum Commands {
         status: Option<String>,
     },
     Update {
+        uuid: Uuid,
+
         #[clap(short, long)]
         name: Option<String>,
 
@@ -56,6 +58,24 @@ fn main() -> Result<()> {
     let db_connection = Connection::open("./jay.db")?;
 
     match args.command {
+        Commands::Add { name, description, r_type, quantity, status } => {
+            let r = db_connection.execute(
+            r#"INSERT INTO items_history (who, uuid, name, description, type, quantity, status)
+                    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)"#,
+                params![
+                    "SYSTEM",
+                    Uuid::new_v4(),
+                    name,
+                    description,
+                    r_type,
+                    quantity,
+                    status
+                ])?;
+            
+            eprintln!("Created {} row.", r);
+            
+            Ok(())
+        },
         Commands::List => {
             // query_map requires a mutable reference so we let mut here
             let mut statement = db_connection.prepare(
@@ -71,7 +91,7 @@ fn main() -> Result<()> {
                 row.get::<usize, Uuid>(2)?,
                 row.get::<usize, String>(3)?,
                 row.get::<usize, u64>(4)?,
-                row.get::<usize, String>(5)?,
+                row.get::<usize, Option<String>>(5)?,
             )))?.filter_map(|result| result.map_err(|e| {eprintln!("{}", e)}).ok());
 
             // Finally, output the data to stdout.
@@ -79,8 +99,8 @@ fn main() -> Result<()> {
             for (item_history_id, last_modified, uuid, name, quantity, status) in mapped_rows {
                 // TODO: Can I do this by directly passing the tuple to println! somehow?
                 println!(
-                    "{0: <3} {1:?} {2:?} {3: <3} {4: <10} {5}",
-                    item_history_id, last_modified, uuid, quantity, status, name
+                    "{0: <3} {1:?} {2:?} {3: <3} {4: <14} {5}",
+                    item_history_id, last_modified, uuid, quantity, format!("{:?}", status), name
                 );
             }
 
