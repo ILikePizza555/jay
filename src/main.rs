@@ -76,10 +76,6 @@ fn main() -> Result<()> {
             
             Ok(())
         },
-        Commands::Update { uuid, name, description, r_type, quantity, status } => {
-            println!("Not implemented.");
-            Ok(())
-        },
         Commands::List => {
             // query_map requires a mutable reference so we let mut here
             let mut statement = db_connection.prepare(
@@ -137,6 +133,10 @@ fn main() -> Result<()> {
                     id, from, to, who, name, description, r_type, quantity, status, deleted)
             }
 
+            Ok(())
+        }
+        _ => {
+            println!("Not implemented.");
             Ok(())
         }
     }
